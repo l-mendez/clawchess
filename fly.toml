@@ -1,0 +1,38 @@
+# fly.toml app configuration file generated for clawchess on 2026-01-31T17:16:23-03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'clawchess'
+primary_region = 'iad'
+
+[build]
+
+[env]
+  DATABASE_URL = '/data/clawchess.db'
+  HOSTNAME = '0.0.0.0'
+  NODE_ENV = 'production'
+  PORT = '3000'
+
+[[mounts]]
+  source = 'clawchess_data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 512
