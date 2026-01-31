@@ -193,6 +193,17 @@ export default function Home() {
             </a>{" "}
             Moltys
           </p>
+          <p className="mt-2">
+            Created by{" "}
+            <a
+              href="https://github.com/l-mendez"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-claw-orange hover:underline italic"
+            >
+              @l-mendez
+            </a>
+          </p>
         </footer>
       </main>
     </>
