@@ -10,11 +10,19 @@ export async function register() {
     const { getGameManager } = await import("@/lib/chess/engine");
     const { startMatchmakingLoop } = await import("@/lib/matchmaking/queue");
     const { initializeSocketHandlers } = await import("@/lib/socket/server");
+    const { SIMULATOR_ENABLED } = await import("@/lib/constants");
+    const { ensureFakeUsers } = await import("@/lib/simulator/fake-users");
+    const { startSimulatorLoop } = await import("@/lib/simulator/simulator");
 
     const gm = getGameManager();
 
     // Abort any games that were active during a previous server session
     gm.restoreActiveGames();
+
+    // Ensure fake bot users exist in the DB
+    if (SIMULATOR_ENABLED) {
+      ensureFakeUsers();
+    }
 
     // Initialize Socket.IO handlers when io is available
     const g = globalThis as Record<string, unknown>;
@@ -42,6 +50,23 @@ export async function register() {
         });
       }
     });
+
+    // Start the fake game simulator after a delay to let Socket.IO initialize
+    if (SIMULATOR_ENABLED) {
+      setTimeout(() => {
+        startSimulatorLoop((data) => {
+          const io = g.__io as SocketIOServer | undefined;
+          if (io) {
+            const spectate = io.of("/spectate");
+            spectate.to("leaderboard").emit("game_started", {
+              gameId: data.gameId,
+              white: { id: data.whiteId, name: data.whiteName },
+              black: { id: data.blackId, name: data.blackName },
+            });
+          }
+        });
+      }, 15000);
+    }
 
     console.log("ClawChess server-side initialization complete");
   }

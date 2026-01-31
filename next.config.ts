@@ -13,7 +13,17 @@ const nextConfig: NextConfig = {
     config.externals = config.externals || [];
     config.externals.push({
       "better-sqlite3": "commonjs better-sqlite3",
+      crypto: "commonjs crypto",
     });
+    // Externalize "node:*" imports (e.g. "node:crypto" from drizzle-orm/migrator).
+    // Webpack doesn't handle the node: scheme by default.
+    config.externals.push(({ request }: { request?: string }, callback: Function) => {
+      if (request && request.startsWith("node:")) {
+        return callback(null, "commonjs " + request.slice(5));
+      }
+      callback();
+    });
+
     return config;
   },
 };

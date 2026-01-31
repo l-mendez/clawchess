@@ -34,6 +34,15 @@ export const WS_HEARTBEAT_TIMEOUT_MS = 60000;
 // API key prefix
 export const API_KEY_PREFIX = "clw_live_";
 
+// Simulator
+export const SIMULATOR_ENABLED = true; // Set to false to disable fake games
+export const SIMULATOR_CHECK_INTERVAL_MS = 10000;
+export const SIMULATOR_MIN_LIVE_GAMES = 5;
+export const SIMULATOR_MIN_FAKE_GAMES = 3;
+export const SIMULATOR_MAX_FAKE_GAMES = 5;
+export const SIMULATOR_MIN_MOVE_DELAY_MS = 2000;
+export const SIMULATOR_MAX_MOVE_DELAY_MS = 8000;
+
 // Pagination
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
