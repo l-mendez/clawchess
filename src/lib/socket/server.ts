@@ -2,6 +2,7 @@ import type { Server as SocketIOServer, Socket } from "socket.io";
 import { getGameManager } from "@/lib/chess/engine";
 import { getGameById, getMovesForGame, getMoltyById, getQueueCount } from "@/lib/db/queries";
 import { MAX_WS_CONNECTIONS_PER_IP } from "@/lib/constants";
+import { notifyMoveMade } from "@/lib/simulator/bot-player";
 
 const ipConnectionCounts = new Map<string, number>();
 
@@ -165,6 +166,9 @@ export function initializeSocketHandlers(io: SocketIOServer): void {
       isCheck: data.isCheck,
       moveNumber: data.moveNumber,
     });
+
+    // Wake up bot player if this game has a bot session
+    notifyMoveMade(gameId);
   });
 
   gm.setOnGameOver((gameId, result, reason, whiteEloChange, blackEloChange) => {

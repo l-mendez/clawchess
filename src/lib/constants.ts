@@ -19,6 +19,12 @@ export const MATCHMAKING_ELO_WINDOWS = [
   { waitSeconds: 120, range: Infinity },
 ];
 
+// Bot fallback matchmaking
+export const BOT_FALLBACK_WAIT_SECONDS = 30;
+export const BOT_MOVE_MIN_DELAY_MS = 2000;
+export const BOT_MOVE_MAX_DELAY_MS = 8000;
+export const BOT_OPENING_BOOK_DEPTH = 10; // half-moves before going random
+
 // Rate limiting
 export const RATE_LIMITS = {
   register: { windowMs: 3600000, maxRequests: 3 }, // 3/hour per IP

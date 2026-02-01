@@ -9,7 +9,10 @@ import {
   MATCHMAKING_ELO_WINDOWS,
   DEFAULT_TIME_CONTROL_SECONDS,
   DEFAULT_INCREMENT_SECONDS,
+  BOT_FALLBACK_WAIT_SECONDS,
 } from "@/lib/constants";
+import { getAvailableFakeUser } from "@/lib/simulator/fake-users";
+import { startBotSession } from "@/lib/simulator/bot-player";
 
 interface MatchResult {
   gameId: string;
@@ -147,24 +150,57 @@ function createMatch(
   };
 }
 
+function isBot(moltyId: string): boolean {
+  return moltyId.startsWith("bot-");
+}
+
 export function runMatchmaking(): MatchResult[] {
   const entries = getQueueEntries();
-  if (entries.length < 2) return [];
+  const realEntries = entries.filter((e) => !isBot(e.moltyId));
 
   const matches: MatchResult[] = [];
-  const remaining = [...entries];
 
-  while (remaining.length >= 2) {
-    const pair = findMatch(remaining);
-    if (!pair) break;
+  // Phase 1: Match real users with each other
+  if (realEntries.length >= 2) {
+    const remaining = [...realEntries];
 
-    const [i, j] = pair;
-    const match = createMatch(remaining[i], remaining[j]);
-    matches.push(match);
+    while (remaining.length >= 2) {
+      const pair = findMatch(remaining);
+      if (!pair) break;
 
-    // Remove matched entries (higher index first to avoid shifting)
-    remaining.splice(j, 1);
-    remaining.splice(i, 1);
+      const [i, j] = pair;
+      const match = createMatch(remaining[i], remaining[j]);
+      matches.push(match);
+
+      remaining.splice(j, 1);
+      remaining.splice(i, 1);
+    }
+  }
+
+  // Phase 2: Bot fallback for a single lonely real user
+  const remainingEntries = getQueueEntries().filter((e) => !isBot(e.moltyId));
+
+  if (remainingEntries.length === 1) {
+    const lonelyUser = remainingEntries[0];
+    const waitSeconds = (Date.now() - lonelyUser.joinedAt.getTime()) / 1000;
+
+    if (waitSeconds >= BOT_FALLBACK_WAIT_SECONDS) {
+      const bot = getAvailableFakeUser(lonelyUser.elo);
+      if (bot) {
+        const match = createMatch(
+          { moltyId: lonelyUser.moltyId, elo: lonelyUser.elo },
+          { moltyId: bot.id, elo: bot.elo }
+        );
+        matches.push(match);
+
+        const botColor: "w" | "b" = match.whiteId === bot.id ? "w" : "b";
+        startBotSession(match.gameId, bot.id, botColor);
+
+        console.log(
+          `[Matchmaking] Bot fallback: matched with ${bot.name} after ${Math.round(waitSeconds)}s wait`
+        );
+      }
+    }
   }
 
   return matches;

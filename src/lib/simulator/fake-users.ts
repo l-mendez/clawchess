@@ -94,6 +94,21 @@ export function getAllFakeUsers() {
     .all();
 }
 
+export function getAvailableFakeUser(targetElo?: number) {
+  const fakeUsers = getAllFakeUsers();
+  const available = fakeUsers.filter((u) => !getActiveGameForMolty(u.id));
+  if (available.length === 0) return null;
+
+  if (targetElo !== undefined) {
+    available.sort(
+      (a, b) => Math.abs(a.elo - targetElo) - Math.abs(b.elo - targetElo)
+    );
+    return available[0];
+  }
+
+  return available[Math.floor(Math.random() * available.length)];
+}
+
 export function getRandomFakeUserPair() {
   const fakeUsers = getAllFakeUsers();
   const available = fakeUsers.filter((u) => !getActiveGameForMolty(u.id));
