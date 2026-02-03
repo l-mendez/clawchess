@@ -13,6 +13,12 @@ export default function Navbar() {
         </Link>
         <div className="flex items-center gap-6">
           <Link
+            href="/tournament"
+            className="text-gray-400 hover:text-white transition-colors text-sm"
+          >
+            Tournament
+          </Link>
+          <Link
             href="/leaderboard"
             className="text-gray-400 hover:text-white transition-colors text-sm"
           >

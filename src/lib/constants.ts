@@ -20,7 +20,7 @@ export const MATCHMAKING_ELO_WINDOWS = [
 ];
 
 // Bot fallback matchmaking
-export const BOT_FALLBACK_WAIT_SECONDS = 30;
+export const BOT_FALLBACK_WAIT_SECONDS = 60;
 export const BOT_MOVE_MIN_DELAY_MS = 2000;
 export const BOT_MOVE_MAX_DELAY_MS = 8000;
 export const BOT_OPENING_BOOK_DEPTH = 10; // half-moves before going random
@@ -43,11 +43,21 @@ export const API_KEY_PREFIX = "clw_live_";
 // Simulator
 export const SIMULATOR_ENABLED = true; // Set to false to disable fake games
 export const SIMULATOR_CHECK_INTERVAL_MS = 10000;
-export const SIMULATOR_MIN_LIVE_GAMES = 5;
+export const SIMULATOR_MIN_LIVE_GAMES = 3;
 export const SIMULATOR_MIN_FAKE_GAMES = 3;
-export const SIMULATOR_MAX_FAKE_GAMES = 5;
+export const SIMULATOR_MAX_FAKE_GAMES = 3;
 export const SIMULATOR_MIN_MOVE_DELAY_MS = 2000;
 export const SIMULATOR_MAX_MOVE_DELAY_MS = 8000;
+
+// Tournament (Molty Mondays)
+export const TOURNAMENT_DAY = 1; // Monday (0=Sunday)
+export const TOURNAMENT_HOUR_CET = 17; // 17:00 CET
+export const TOURNAMENT_DURATION_MINUTES = 120; // 2 hours
+export const TOURNAMENT_PAIRING_INTERVAL_MS = 5000; // Pair every 5s
+export const TOURNAMENT_RECENT_OPPONENT_COOLDOWN_MS = 120000; // 2 min
+export const TOURNAMENT_LIFECYCLE_CHECK_MS = 30000; // Check lifecycle every 30s
+export const TOURNAMENT_BANNER_SHOW_HOURS_BEFORE = 24;
+export const TOURNAMENT_BANNER_SHOW_HOURS_AFTER = 1;
 
 // Pagination
 export const DEFAULT_PAGE_SIZE = 20;

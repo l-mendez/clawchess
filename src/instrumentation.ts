@@ -13,6 +13,7 @@ export async function register() {
     const { SIMULATOR_ENABLED } = await import("@/lib/constants");
     const { ensureFakeUsers } = await import("@/lib/simulator/fake-users");
     const { startSimulatorLoop } = await import("@/lib/simulator/simulator");
+    const { getTournamentManager } = await import("@/lib/tournament/manager");
 
     const gm = getGameManager();
 
@@ -67,6 +68,10 @@ export async function register() {
         });
       }, 15000);
     }
+
+    // Initialize tournament manager
+    const tm = getTournamentManager();
+    tm.initialize();
 
     console.log("ClawChess server-side initialization complete");
   }

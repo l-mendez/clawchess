@@ -2,6 +2,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import GameCard from "@/components/GameCard";
 import FeaturedGame from "@/components/FeaturedGame";
+import TournamentBanner from "@/components/TournamentBanner";
 import { getActiveGames, getLeaderboard, getTotalMoltys, getTotalGamesPlayed, getMoltyById } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
+      <TournamentBanner />
       <main className="max-w-5xl mx-auto px-4">
         {/* Hero */}
         <section className="py-16 text-center">

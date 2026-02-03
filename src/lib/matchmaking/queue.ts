@@ -1,9 +1,7 @@
-import { v4 as uuidv4 } from "uuid";
 import { db } from "@/lib/db";
-import { matchmakingQueue, games, moltys } from "@/lib/db/schema";
+import { matchmakingQueue } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getQueueEntries } from "@/lib/db/queries";
-import { getGameManager } from "@/lib/chess/engine";
 import {
   MATCHMAKING_INTERVAL_MS,
   MATCHMAKING_ELO_WINDOWS,
@@ -13,14 +11,9 @@ import {
 } from "@/lib/constants";
 import { getAvailableFakeUser } from "@/lib/simulator/fake-users";
 import { startBotSession } from "@/lib/simulator/bot-player";
+import { createMatchWithRandomColors, type CreateGameResult } from "@/lib/chess/game-factory";
 
-interface MatchResult {
-  gameId: string;
-  whiteId: string;
-  blackId: string;
-  whiteName: string;
-  blackName: string;
-}
+type MatchResult = CreateGameResult;
 
 function findMatch(
   entries: Array<{
@@ -92,62 +85,22 @@ function createMatch(
   entry1: { moltyId: string; elo: number },
   entry2: { moltyId: string; elo: number }
 ): MatchResult {
-  // Random color assignment
-  const whiteFirst = Math.random() < 0.5;
-  const white = whiteFirst ? entry1 : entry2;
-  const black = whiteFirst ? entry2 : entry1;
-
-  const gameId = uuidv4();
-  const timeControlMs = DEFAULT_TIME_CONTROL_SECONDS * 1000;
-
-  // Get player names
-  const whiteMolty = db
-    .select({ name: moltys.name })
-    .from(moltys)
-    .where(eq(moltys.id, white.moltyId))
-    .get();
-  const blackMolty = db
-    .select({ name: moltys.name })
-    .from(moltys)
-    .where(eq(moltys.id, black.moltyId))
-    .get();
-
-  // Create game record
-  db.insert(games)
-    .values({
-      id: gameId,
-      whiteId: white.moltyId,
-      blackId: black.moltyId,
-      status: "active",
-      whiteEloStart: white.elo,
-      blackEloStart: black.elo,
-      timeControlSeconds: DEFAULT_TIME_CONTROL_SECONDS,
-      incrementSeconds: DEFAULT_INCREMENT_SECONDS,
-      whiteTimeRemaining: timeControlMs,
-      blackTimeRemaining: timeControlMs,
-      startedAt: new Date(),
-    })
-    .run();
+  const match = createMatchWithRandomColors(
+    entry1,
+    entry2,
+    DEFAULT_TIME_CONTROL_SECONDS,
+    DEFAULT_INCREMENT_SECONDS
+  );
 
   // Remove both from queue
   db.delete(matchmakingQueue)
-    .where(eq(matchmakingQueue.moltyId, white.moltyId))
+    .where(eq(matchmakingQueue.moltyId, entry1.moltyId))
     .run();
   db.delete(matchmakingQueue)
-    .where(eq(matchmakingQueue.moltyId, black.moltyId))
+    .where(eq(matchmakingQueue.moltyId, entry2.moltyId))
     .run();
 
-  // Create the game in the engine
-  const gm = getGameManager();
-  gm.createGame(gameId, timeControlMs, DEFAULT_INCREMENT_SECONDS * 1000);
-
-  return {
-    gameId,
-    whiteId: white.moltyId,
-    blackId: black.moltyId,
-    whiteName: whiteMolty?.name ?? "Unknown",
-    blackName: blackMolty?.name ?? "Unknown",
-  };
+  return match;
 }
 
 function isBot(moltyId: string): boolean {

@@ -3,6 +3,7 @@ import { getGameManager } from "@/lib/chess/engine";
 import { getGameById, getMovesForGame, getMoltyById, getQueueCount } from "@/lib/db/queries";
 import { MAX_WS_CONNECTIONS_PER_IP } from "@/lib/constants";
 import { notifyMoveMade } from "@/lib/simulator/bot-player";
+import { getTournamentManager } from "@/lib/tournament/manager";
 
 const ipConnectionCounts = new Map<string, number>();
 
@@ -141,6 +142,14 @@ export function initializeSocketHandlers(io: SocketIOServer): void {
       socket.leave("leaderboard");
     });
 
+    socket.on("join_tournament", () => {
+      socket.join("tournament");
+    });
+
+    socket.on("leave_tournament", () => {
+      socket.leave("tournament");
+    });
+
     socket.on("disconnect", () => {
       const count = ipConnectionCounts.get(ip) || 1;
       if (count <= 1) {
@@ -154,7 +163,7 @@ export function initializeSocketHandlers(io: SocketIOServer): void {
   // Wire up GameManager events to Socket.IO broadcasts
   const gm = getGameManager();
 
-  gm.setOnMoveMade((gameId, data) => {
+  gm.addOnMoveMade((gameId, data) => {
     spectate.to(`game:${gameId}`).emit("move_made", {
       san: data.san,
       from: data.from,
@@ -171,7 +180,7 @@ export function initializeSocketHandlers(io: SocketIOServer): void {
     notifyMoveMade(gameId);
   });
 
-  gm.setOnGameOver((gameId, result, reason, whiteEloChange, blackEloChange) => {
+  gm.addOnGameOver((gameId, result, reason, whiteEloChange, blackEloChange) => {
     spectate.to(`game:${gameId}`).emit("game_over", {
       result,
       reason,
@@ -181,6 +190,20 @@ export function initializeSocketHandlers(io: SocketIOServer): void {
 
     // Also notify leaderboard subscribers
     spectate.to("leaderboard").emit("leaderboard_update", {});
+
+    // Notify tournament manager
+    const tm = getTournamentManager();
+    tm.onGameOver(gameId, result);
+  });
+
+  // Wire up tournament manager socket emitter
+  const tm = getTournamentManager();
+  tm.setSocketEmitter((event, data) => {
+    spectate.to("tournament").emit(event, data);
+    // Also broadcast tournament game starts to leaderboard room
+    if (event === "tournament_game_started") {
+      spectate.to("leaderboard").emit("game_started", data);
+    }
   });
 
   // Periodic clock tick broadcast for active games

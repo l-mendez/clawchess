@@ -47,33 +47,33 @@ export interface GameState {
 
 class GameManager {
   private activeGames = new Map<string, ActiveGame>();
-  private onGameOver:
-    | ((
-        gameId: string,
-        result: string,
-        reason: string,
-        whiteEloChange: number,
-        blackEloChange: number
-      ) => void)
-    | null = null;
-  private onMoveMade:
-    | ((
-        gameId: string,
-        data: {
-          san: string;
-          from: string;
-          to: string;
-          fen: string;
-          turn: string;
-          whiteTimeMs: number;
-          blackTimeMs: number;
-          isCheck: boolean;
-          moveNumber: number;
-        }
-      ) => void)
-    | null = null;
+  private onGameOverCallbacks: Array<
+    (
+      gameId: string,
+      result: string,
+      reason: string,
+      whiteEloChange: number,
+      blackEloChange: number
+    ) => void
+  > = [];
+  private onMoveMadeCallbacks: Array<
+    (
+      gameId: string,
+      data: {
+        san: string;
+        from: string;
+        to: string;
+        fen: string;
+        turn: string;
+        whiteTimeMs: number;
+        blackTimeMs: number;
+        isCheck: boolean;
+        moveNumber: number;
+      }
+    ) => void
+  > = [];
 
-  setOnGameOver(
+  addOnGameOver(
     cb: (
       gameId: string,
       result: string,
@@ -82,10 +82,10 @@ class GameManager {
       blackEloChange: number
     ) => void
   ) {
-    this.onGameOver = cb;
+    this.onGameOverCallbacks.push(cb);
   }
 
-  setOnMoveMade(
+  addOnMoveMade(
     cb: (
       gameId: string,
       data: {
@@ -101,7 +101,7 @@ class GameManager {
       }
     ) => void
   ) {
-    this.onMoveMade = cb;
+    this.onMoveMadeCallbacks.push(cb);
   }
 
   createGame(
@@ -253,8 +253,8 @@ class GameManager {
       .run();
 
     // Emit move event
-    if (this.onMoveMade) {
-      this.onMoveMade(gameId, {
+    for (const cb of this.onMoveMadeCallbacks) {
+      cb(gameId, {
         san: result.san,
         from: result.from,
         to: result.to,
@@ -496,9 +496,9 @@ class GameManager {
       .where(eq(moltys.id, gameRecord.blackId))
       .run();
 
-    // Emit game over event
-    if (this.onGameOver) {
-      this.onGameOver(gameId, result, reason, whiteEloChange, blackEloChange);
+    // Emit game over events
+    for (const cb of this.onGameOverCallbacks) {
+      cb(gameId, result, reason, whiteEloChange, blackEloChange);
     }
 
     // Remove from active games

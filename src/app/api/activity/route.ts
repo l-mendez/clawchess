@@ -4,6 +4,9 @@ import {
   getActiveGameForMolty,
   getQueueEntryForMolty,
   getMoltyById,
+  getCurrentTournament,
+  getParticipantEntry,
+  getTournamentStandings,
 } from "@/lib/db/queries";
 import { getGameManager } from "@/lib/chess/engine";
 import { db } from "@/lib/db";
@@ -106,9 +109,38 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  // Tournament info
+  let tournament = null;
+  const activeTournament = getCurrentTournament();
+  if (activeTournament) {
+    const participant = getParticipantEntry(activeTournament.id, molty.id);
+    if (participant) {
+      const standings = getTournamentStandings(activeTournament.id);
+      const myRank = standings.findIndex((s) => s.moltyId === molty.id) + 1;
+      tournament = {
+        id: activeTournament.id,
+        name: activeTournament.name,
+        status: activeTournament.status,
+        your_score: participant.score,
+        your_rank: myRank || null,
+        is_participating: true,
+      };
+    } else {
+      tournament = {
+        id: activeTournament.id,
+        name: activeTournament.name,
+        status: activeTournament.status,
+        your_score: null,
+        your_rank: null,
+        is_participating: false,
+      };
+    }
+  }
+
   return NextResponse.json({
     in_queue: inQueue,
     active_game: activeGame,
     recent_results: recentResults,
+    tournament,
   });
 }

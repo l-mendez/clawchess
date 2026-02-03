@@ -1,6 +1,6 @@
 import { db } from "./index";
-import { moltys, games, moves, matchmakingQueue } from "./schema";
-import { eq, desc, and, or, sql, asc } from "drizzle-orm";
+import { moltys, games, moves, matchmakingQueue, tournaments, tournamentParticipants } from "./schema";
+import { eq, desc, and, or, sql, asc, ne } from "drizzle-orm";
 
 // ---- Molty queries ----
 
@@ -133,6 +133,120 @@ export function getTotalGamesPlayed() {
     .select({ count: sql<number>`count(*)` })
     .from(games)
     .where(eq(games.status, "completed"))
+    .get();
+  return result?.count ?? 0;
+}
+
+// ---- Tournament queries ----
+
+export function getCurrentTournament() {
+  return db
+    .select()
+    .from(tournaments)
+    .where(eq(tournaments.status, "active"))
+    .get();
+}
+
+export function getTotalTournamentCount() {
+  const result = db
+    .select({ count: sql<number>`count(*)` })
+    .from(tournaments)
+    .get();
+  return result?.count ?? 0;
+}
+
+export function getNextScheduledTournament() {
+  return db
+    .select()
+    .from(tournaments)
+    .where(eq(tournaments.status, "scheduled"))
+    .orderBy(asc(tournaments.startsAt))
+    .get();
+}
+
+export function getMostRecentCompletedTournament() {
+  return db
+    .select()
+    .from(tournaments)
+    .where(eq(tournaments.status, "completed"))
+    .orderBy(desc(tournaments.createdAt))
+    .get();
+}
+
+export function getTournamentById(id: string) {
+  return db.select().from(tournaments).where(eq(tournaments.id, id)).get();
+}
+
+export function getTournamentStandings(tournamentId: string) {
+  return db
+    .select({
+      id: tournamentParticipants.id,
+      moltyId: tournamentParticipants.moltyId,
+      name: moltys.name,
+      score: tournamentParticipants.score,
+      gamesPlayed: tournamentParticipants.gamesPlayed,
+      wins: tournamentParticipants.wins,
+      losses: tournamentParticipants.losses,
+      draws: tournamentParticipants.draws,
+      rank: tournamentParticipants.rank,
+      elo: moltys.elo,
+    })
+    .from(tournamentParticipants)
+    .innerJoin(moltys, eq(tournamentParticipants.moltyId, moltys.id))
+    .where(eq(tournamentParticipants.tournamentId, tournamentId))
+    .orderBy(
+      desc(tournamentParticipants.score),
+      desc(tournamentParticipants.gamesPlayed)
+    )
+    .all();
+}
+
+export function getParticipantEntry(tournamentId: string, moltyId: string) {
+  return db
+    .select()
+    .from(tournamentParticipants)
+    .where(
+      and(
+        eq(tournamentParticipants.tournamentId, tournamentId),
+        eq(tournamentParticipants.moltyId, moltyId)
+      )
+    )
+    .get();
+}
+
+export function getTournamentGames(
+  tournamentId: string,
+  page: number,
+  limit: number
+) {
+  const offset = (page - 1) * limit;
+  return db
+    .select()
+    .from(games)
+    .where(eq(games.tournamentId, tournamentId))
+    .orderBy(desc(games.createdAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+}
+
+export function getPastTournaments(page: number, limit: number) {
+  const offset = (page - 1) * limit;
+  return db
+    .select()
+    .from(tournaments)
+    .where(eq(tournaments.status, "completed"))
+    .orderBy(desc(tournaments.startsAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+}
+
+export function getTournamentGameCount(tournamentId: string) {
+  const result = db
+    .select({ count: sql<number>`count(*)` })
+    .from(games)
+    .where(eq(games.tournamentId, tournamentId))
     .get();
   return result?.count ?? 0;
 }
