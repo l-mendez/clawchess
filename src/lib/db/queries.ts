@@ -1,6 +1,40 @@
 import { db } from "./index";
 import { moltys, games, moves, matchmakingQueue, tournaments, tournamentParticipants } from "./schema";
-import { eq, desc, and, or, sql, asc, ne } from "drizzle-orm";
+import { eq, desc, and, or, sql, asc, ne, inArray } from "drizzle-orm";
+
+// ---- Maintenance ----
+
+/**
+ * Delete finished bot-vs-bot games (and their moves) beyond the `keep` most
+ * recent ones. Deletes at most `batchSize` games per call so a large backlog
+ * is worked through gradually. Returns the number of games deleted.
+ */
+export function pruneOldSimulatedGames(keep: number, batchSize: number): number {
+  const stale = db
+    .select({ id: games.id })
+    .from(games)
+    .where(
+      and(
+        sql`${games.whiteId} LIKE 'bot-%'`,
+        sql`${games.blackId} LIKE 'bot-%'`,
+        sql`${games.tournamentId} IS NULL`,
+        ne(games.status, "active")
+      )
+    )
+    .orderBy(desc(games.createdAt))
+    .limit(batchSize)
+    .offset(keep)
+    .all();
+
+  if (stale.length === 0) return 0;
+
+  const ids = stale.map((g) => g.id);
+  db.transaction((tx) => {
+    tx.delete(moves).where(inArray(moves.gameId, ids)).run();
+    tx.delete(games).where(inArray(games.id, ids)).run();
+  });
+  return ids.length;
+}
 
 // ---- Molty queries ----
 
