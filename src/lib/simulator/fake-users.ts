@@ -109,9 +109,11 @@ export function getAvailableFakeUser(targetElo?: number) {
   return available[Math.floor(Math.random() * available.length)];
 }
 
-export function getRandomFakeUserPair() {
+export function getRandomFakeUserPair(excludeIds?: Set<string>) {
   const fakeUsers = getAllFakeUsers();
-  const available = fakeUsers.filter((u) => !getActiveGameForMolty(u.id));
+  const available = fakeUsers.filter(
+    (u) => !excludeIds?.has(u.id) && !getActiveGameForMolty(u.id)
+  );
   if (available.length < 2) return null;
 
   // Shuffle and pick two distinct users

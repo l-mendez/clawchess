@@ -43,11 +43,24 @@ export const API_KEY_PREFIX = "clw_live_";
 // Simulator
 export const SIMULATOR_ENABLED = true; // Set to false to disable fake games
 export const SIMULATOR_CHECK_INTERVAL_MS = 10000;
-export const SIMULATOR_MIN_LIVE_GAMES = 3;
-export const SIMULATOR_MIN_FAKE_GAMES = 3;
-export const SIMULATOR_MAX_FAKE_GAMES = 3;
-export const SIMULATOR_MIN_MOVE_DELAY_MS = 2000;
-export const SIMULATOR_MAX_MOVE_DELAY_MS = 8000;
+// Target number of live games fluctuates between these, re-rolled periodically
+export const SIMULATOR_MIN_LIVE_GAMES = 1;
+export const SIMULATOR_MAX_LIVE_GAMES = 3;
+export const SIMULATOR_TARGET_REROLL_MS = 10 * 60 * 1000;
+// Think times: quick in the opening, slower in the middlegame, occasional long think
+export const SIMULATOR_OPENING_PLIES = 12;
+export const SIMULATOR_OPENING_MOVE_DELAY_MS = { min: 500, max: 2500 };
+export const SIMULATOR_MOVE_DELAY_MS = { min: 2000, max: 9000 };
+export const SIMULATOR_LONG_THINK_CHANCE = 0.08;
+export const SIMULATOR_LONG_THINK_DELAY_MS = { min: 12000, max: 25000 };
+// Never spend more than this fraction of the remaining clock on one move
+export const SIMULATOR_MAX_CLOCK_FRACTION = 0.08;
+// Bots rest between games instead of instantly starting another
+export const SIMULATOR_BOT_REST_MS = { min: 5 * 60 * 1000, max: 30 * 60 * 1000 };
+// Only keep the most recent bot-vs-bot games; older ones are pruned with their moves
+export const SIMULATOR_MAX_STORED_GAMES = 500;
+export const SIMULATOR_PRUNE_INTERVAL_MS = 60 * 1000;
+export const SIMULATOR_PRUNE_BATCH_SIZE = 100;
 
 // Tournament (Molty Mondays)
 export const TOURNAMENT_DAY = 1; // Monday (0=Sunday)

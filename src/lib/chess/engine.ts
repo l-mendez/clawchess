@@ -355,6 +355,13 @@ class GameManager {
     };
   }
 
+  agreeDraw(
+    gameId: string
+  ): { whiteEloChange: number; blackEloChange: number } | null {
+    if (!this.activeGames.has(gameId)) return null;
+    return this.finalizeGame(gameId, "draw", "agreement");
+  }
+
   handleTimeout(gameId: string): void {
     const game = this.activeGames.get(gameId);
     if (!game) return;

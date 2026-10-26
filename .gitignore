@@ -44,8 +44,6 @@ next-env.d.ts
 *.db-wal
 *.db-shm
 
-# drizzle
-/drizzle/meta
 
 # IDE
 .vscode/
